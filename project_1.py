@@ -45,9 +45,7 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
         # Case where we encrypt and return ciphertext
         if (prob_of_random_ciphertext <= coin_value <= 1):
             j = (message_pointer % t) + 1 # Shift value
-            print("j: ",j)
             key_shift = key[j % t]
-            print("key shift: ", key_shift)
             message_char_pos = keyspace.index(m[message_pointer])
             shifted_char = keyspace[(message_char_pos + key_shift) % len(keyspace)] # Shift the message char by j pos
             c.append(shifted_char) # Append shifted message character to ciphertext list
@@ -57,7 +55,7 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
             c.append(rand_char)
             num_rand_characters += 1
         ciphertext_pointer += 1
-    return c
+    return ''.join(c)
 
 def decrypt(ciphertext, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
@@ -98,30 +96,32 @@ def find_best_plaintext_match(decrypted_text, PT):
 def main():
     pt_num = 0
     key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
-    c = encrypt(pt_num, key, prob_random_ciphertext)
-    str_c = ''
-    for x in c:
-        str_c+=x
-    print("------------------------------------")
-    print("Message: ")
-    print(" ")
-    print(PT[pt_num])
-    print("------------------------------------")
-    print("Ciphertext: ")
-    print(" ")
-    print(str_c)
-    decrypted_text = decrypt(c,key, prob_random_ciphertext)
-    print("------------------------------------")
-    print("Decrypted: ")
-    print(" ")
-    print(decrypted_text)
-    print("------------------------------------")
     
-    matched_PT_idx = find_best_plaintext_match(decrypted_text, PT)
-    print("------------------------------------")
-    print(" ")
-    print("My plaintext guess is:")
-    print(PT[matched_PT_idx])
+    iters = 1
+    wrong = 0
+    
+    while iters < 1001:
+        print("-----------------------------------------------------")
+        print("Iter:", iters)
+        print("Message: ")
+        print(' ')
+        print(PT[pt_num])
+        print("Ciphertext: ")
+        print(' ')
+        encrypted_text = encrypt(pt_num, key, prob_random_ciphertext)
+        #print(encrypted_text)
+        print("Decrypted: ")
+        print(' ')
+        decrypted_text = decrypt(encrypted_text, key, prob_random_ciphertext)
+        #print(decrypted_text)
+        print("My plaintext guess is:")
+        matched_PT_idx = find_best_plaintext_match(decrypted_text, PT)
+        if PT[matched_PT_idx] != PT[pt_num]:
+            wrong += 1
+        #print(PT[matched_PT_idx])
+        iters += 1
+        
+    print(f"{((iters - wrong)/iters) * 100:.2f}% correct")
 
 if __name__ == "__main__":
     main()
