@@ -19,6 +19,7 @@
 import os
 import sys
 import random
+import Levenshtein
 
 PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest hastes spades fevers cause wisped overdecorates linked smitten trickle scanning cognize oaken casework significate influenceable precontrived clockers defalcation fruitless splintery kids placidness regenerate harebrained liberalism neuronic clavierist attendees matinees prospectively bubbies longitudinal raving relaxants rigged oxygens chronologist briniest tweezes profaning abeyances fixity gulls coquetted budgerigar drooled unassertive shelter subsoiling surmounted frostlike jobbed hobnailed fulfilling jaywalking testabilit",
       "protectorates committeemen refractory narcissus bridlers weathercocks occluding orchectomy syncoms denunciation chronaxy imperilment incurred defrosted beamy opticopupillary acculturation scouting curiousest tosh preconscious weekday reich saddler politicize mercerizes saucepan bifold chit reviewable easiness brazed essentially idler dependable predicable locales rededicated cowbird kvetched confusingly airdrops dreggier privileges tempter anaerobes glistened sartorial distrustfulness papillary ughs proctoring duplexed pitas traitorously unlighted cryptographer odysseys metamer either meliorat",
@@ -28,7 +29,7 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
       ]
 
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-prob_random_ciphertext = 0.05
+prob_random_ciphertext = 0.1
 
 # Function to test decryption
 def encrypt(pt_number, key, prob_of_random_ciphertext):
@@ -37,7 +38,7 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
     num_rand_characters = 0
     t = len(key)
     c = [] 
-    m = PT[pt_number]
+    m = PT[pt_number] 
     L = len(m) # Length of the message
     while (ciphertext_pointer < (L + num_rand_characters)):
         coin_value = random.uniform(0,1) # coin generation return value [0,1]
@@ -75,23 +76,70 @@ def decrypt(ciphertext, key, prob_of_random_ciphertext):
         
     return ''.join(pt)
 
-def similarity_score(decrypted_text, reference_text):
-    # Compare the two texts and count the number of matching characters
-    score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
-    return score
+def word_similarity(decrypted_text, reference_text):
+    decrypted_words = set(decrypted_text.split())
+    reference_words = set(reference_text.split())
+    
+    intersection = len(decrypted_words & reference_words)
+    union = len(decrypted_words | reference_words)
+    
+    return (intersection / union) * 100  # Return similarity as a percentage
+
+# def similarity_score(decrypted_text, reference_text):
+#     # Compare the two texts and count the number of matching characters
+#     score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
+#     return score
+
+def levenshtein_similarity(decrypted_text, reference_text):
+    distance = Levenshtein.distance(decrypted_text, reference_text)
+    max_len = max(len(decrypted_text), len(reference_text))
+    return (1 - (distance / max_len)) * 100  # Return similarity as a percentage
+
+def hybrid_similarity(decrypted_text, reference_text):
+    levenshtein_score = levenshtein_similarity(decrypted_text, reference_text)
+    word_score = word_similarity(decrypted_text, reference_text)
+    
+    # Combine both methods, e.g., 70% weight on Levenshtein, 30% on word matching
+    return (0.7 * levenshtein_score + 0.3 * word_score)
+
+# def find_best_plaintext_match(decrypted_text, PT):
+#     best_score = -1
+#     best_match_index = -1
+    
+#     for i, pt in enumerate(PT):
+#         score = similarity_score(decrypted_text, pt)
+#         print(f"Similarity score with PT[{i}]: {score}")
+#         if score > best_score:
+#             best_score = score
+#             best_match_index = i
+    
+#     return best_match_index  # Return the index of the best matching plaintext
 
 def find_best_plaintext_match(decrypted_text, PT):
     best_score = -1
     best_match_index = -1
     
     for i, pt in enumerate(PT):
-        score = similarity_score(decrypted_text, pt)
-        print(f"Similarity score with PT[{i}]: {score}")
+        score = levenshtein_similarity(decrypted_text, pt)
+        print(f"Similarity score with PT[{i}]: {score:.2f}")
         if score > best_score:
             best_score = score
             best_match_index = i
     
     return best_match_index  # Return the index of the best matching plaintext
+
+# def find_best_plaintext_match(decrypted_text, PT):
+#     best_score = -1
+#     best_match_index = -1
+    
+#     for i, pt in enumerate(PT):
+#         score = hybrid_similarity(decrypted_text, pt)
+#         print(f"Hybrid similarity score with PT[{i}]: {score:.2f}")
+#         if score > best_score:
+#             best_score = score
+#             best_match_index = i
+    
+#     return best_match_index  # Return the index of the best matching plaintext
     
 def main():
     pt_num = 0
