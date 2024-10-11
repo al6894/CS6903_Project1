@@ -85,10 +85,10 @@ def word_similarity(decrypted_text, reference_text):
     
     return (intersection / union) * 100  # Return similarity as a percentage
 
-# def similarity_score(decrypted_text, reference_text):
-#     # Compare the two texts and count the number of matching characters
-#     score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
-#     return score
+def similarity_score(decrypted_text, reference_text):
+    # Compare the two texts and count the number of matching characters
+    score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
+    return score
 
 def levenshtein_similarity(decrypted_text, reference_text):
     distance = Levenshtein.distance(decrypted_text, reference_text)
@@ -115,31 +115,31 @@ def hybrid_similarity(decrypted_text, reference_text):
     
 #     return best_match_index  # Return the index of the best matching plaintext
 
-def find_best_plaintext_match(decrypted_text, PT):
-    best_score = -1
-    best_match_index = -1
-    
-    for i, pt in enumerate(PT):
-        score = levenshtein_similarity(decrypted_text, pt)
-        print(f"Similarity score with PT[{i}]: {score:.2f}")
-        if score > best_score:
-            best_score = score
-            best_match_index = i
-    
-    return best_match_index  # Return the index of the best matching plaintext
-
 # def find_best_plaintext_match(decrypted_text, PT):
 #     best_score = -1
 #     best_match_index = -1
     
 #     for i, pt in enumerate(PT):
-#         score = hybrid_similarity(decrypted_text, pt)
-#         print(f"Hybrid similarity score with PT[{i}]: {score:.2f}")
+#         score = levenshtein_similarity(decrypted_text, pt)
+#         print(f"Similarity score with PT[{i}]: {score:.2f}")
 #         if score > best_score:
 #             best_score = score
 #             best_match_index = i
     
 #     return best_match_index  # Return the index of the best matching plaintext
+
+def find_best_plaintext_match(decrypted_text, PT):
+    best_score = -1
+    best_match_index = -1
+    
+    for i, pt in enumerate(PT):
+        score = hybrid_similarity(decrypted_text, pt)
+        print(f"Hybrid similarity score with PT[{i}]: {score:.2f}")
+        if score > best_score:
+            best_score = score
+            best_match_index = i
+    
+    return best_match_index  # Return the index of the best matching plaintext
     
 def main():
     pt_num = 0
