@@ -124,6 +124,21 @@ def hybrid_similarity(decrypted_text, plaintext):
     
     return (0.7 * levenshtein_score + 0.3 * word_score)
 
+# Lowest: 82%, Highest: 87% With prob_random_ciphertext = 0.1, weights 0.9, 0.1
+# Lowest: 84.32%, Highest: 87.51% With prob_random_ciphertext = 0.1, weights 0.8, 0.2
+# Lowest: 84.22%, Highest: 86.71% With prob_random_ciphertext = 0.1, weights 0.7, 0.3
+# Lowest: 85.11%, Highest: 86.11% With prob_random_ciphertext = 0.1, weights 0.6, 0.4
+def hybrid_similarity_with_random_detection(decrypted_text, plaintext):
+    random_indices = detect_random_characters(decrypted_text, threshold=0.01)
+    filtered_decrypted = filter_random_chars(decrypted_text, random_indices)
+    filtered_reference = filter_random_chars(plaintext, random_indices)
+    
+    # Use Levenshtein and other similarity measures on filtered texts
+    levenshtein_score = levenshtein_similarity(filtered_decrypted, filtered_reference)
+    word_score = word_similarity(filtered_decrypted, filtered_reference)
+    
+    return (0.6 * levenshtein_score + 0.4 * word_score)
+
 def find_best_plaintext_match(decrypted_text, PT):
     best_score = -1
     matched_PT_idx = -1
@@ -131,7 +146,7 @@ def find_best_plaintext_match(decrypted_text, PT):
     for i, pt in enumerate(PT):
         #score = similarity_score(decrypted_text, pt)
         #score = levenshtein_similarity(decrypted_text, pt)
-        score = hybrid_similarity(decrypted_text, pt)
+        score = hybrid_similarity_with_random_detection(decrypted_text, pt)
         print(f"Similarity score with PT[{i}]: {score:.2f}")
         if score > best_score:
             best_score = score
