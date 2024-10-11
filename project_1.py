@@ -94,6 +94,36 @@ def detect_random_characters(decrypted_text, threshold=0.01):
 def filter_random_chars(decrypted_text, random_indices):
     return ''.join([char for i, char in enumerate(decrypted_text) if i not in random_indices])
 
+def n_grams(text, n=2):
+    return Counter([text[i:i+n] for i in range(len(text)-n+1)])
+
+def get_ngram_probability(model, ngram):
+    prefix, next_char = ngram[:-1], ngram[-1]
+    prefix_count = sum(model[prefix].values())
+    next_char_count = model[prefix][next_char]
+    return next_char_count / prefix_count if prefix_count > 0 else 0
+
+def ngram_similarity(decrypted_text, plaintext, n=3):
+    decrypted_ngrams = n_grams(decrypted_text, n)
+    reference_ngrams = n_grams(plaintext, n)
+    
+    intersection = sum((decrypted_ngrams & reference_ngrams).values())
+    total = sum((decrypted_ngrams | reference_ngrams).values())
+    
+    return (intersection / total) * 100  # Return similarity as a percentage
+
+
+def detect_random_characters_with_confidence(decrypted_text, model, n=3):
+    random_char_confidence = []
+    for i in range(len(decrypted_text) - n + 1):
+        ngram = decrypted_text[i:i+n]
+        prob = get_ngram_probability(model, ngram)
+        random_char_confidence.append(prob)
+    return random_char_confidence
+
+def filter_low_confidence_chars(decrypted_text, confidence_scores, threshold=0.1):
+    return ''.join([char for i, char in enumerate(decrypted_text) if confidence_scores[i] > threshold])
+
 # Compares the similarity of words.
 def word_similarity(decrypted_text, plaintext):
     decrypted_words = set(decrypted_text.split())
@@ -139,6 +169,18 @@ def hybrid_similarity_with_random_detection(decrypted_text, plaintext):
     
     return (0.6 * levenshtein_score + 0.4 * word_score)
 
+# 86.61, 87.01, 87.31, 87.41, 88.01, 88.31, 88.91, 89.31, 89.41, 89.71% with prob_random_ciphertext = 0.1
+def dynamic_hybrid_similarity(decrypted_text, plaintext, prob_random_ciphertext):
+    levenshtein_score = levenshtein_similarity(decrypted_text, plaintext)
+    ngram_score = ngram_similarity(decrypted_text, plaintext, n=4)
+    word_score = word_similarity(decrypted_text, plaintext)
+    
+    # Dynamically adjust weights based on the random character probability
+    if prob_random_ciphertext > 0.1:
+        return (0.6 * levenshtein_score + 0.4 * ngram_score)
+    else:
+        return (0.4 * levenshtein_score + 0.3 * ngram_score + 0.3 * word_score)
+
 def find_best_plaintext_match(decrypted_text, PT):
     best_score = -1
     matched_PT_idx = -1
@@ -146,7 +188,8 @@ def find_best_plaintext_match(decrypted_text, PT):
     for i, pt in enumerate(PT):
         #score = similarity_score(decrypted_text, pt)
         #score = levenshtein_similarity(decrypted_text, pt)
-        score = hybrid_similarity_with_random_detection(decrypted_text, pt)
+        #score = hybrid_similarity_with_random_detection(decrypted_text, pt)
+        score = dynamic_hybrid_similarity(decrypted_text, pt, prob_random_ciphertext)
         print(f"Similarity score with PT[{i}]: {score:.2f}")
         if score > best_score:
             best_score = score
