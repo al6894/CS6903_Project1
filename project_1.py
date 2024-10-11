@@ -36,6 +36,19 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 prob_random_ciphertext = 0.05
 
+# Potential function to generate random keys, up to 10000.
+# (currently not in use)
+def generate_random_keys(num_keys):
+    keys = []
+    for _ in range(num_keys):
+        # Generate a random key of 27 numbers between 0 and 26
+        key = [random.randint(0, 26) for _ in range(27)]
+        keys.append(key)
+    return keys
+
+# Example usage: Generate 10,000 keys
+random_keys = generate_random_keys(10000)
+
 # Function to test decryption
 def encrypt(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
