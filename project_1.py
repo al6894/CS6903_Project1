@@ -1,20 +1,23 @@
-# Conditions:
-# 1. No access to key
-# 2. Part of the encryption scheme is hidden
+'''
+Conditions:
+1. No access to key
+2. Part of the encryption scheme is hidden
 
-# Known:
-# 1. Key is a sequence of t numbers between 0 and 26
-# 2. Ciphertext looks like a sequence of symbols {space, a,..,z}
-# 3. Program will be run on different L, u, and t (ex: L=600, u=5, t between 1 and 20)
-# 4. The encryption algorithm can choose the next character from m[i] as:
-#       a. random value in {space, a,...,z}
-#       b. ciphertext character
-# 5. If mono, key length is 27
-#    If poly, key length can be <<27 (much smaller than 27)
-# 6. Encryption algorithm uses coin generation [0,1] and compares
-#    the value to prob_random_character to decide random or not
-# 7. Program should work for increasing values for 
-#    prob_of_random_ciphertext (e.g., 0.05, 0.10, 0.15, etc)
+Known:
+1. Key is a sequence of t numbers between 0 and 26
+2. Ciphertext looks like a sequence of symbols {space, a,..,z}
+3. Program may be ran on different L, u, and t (ex: L=600, u=5, t between 1 and 20)
+4. The encryption algorithm can choose the next character from m[i] as:
+      a. random value in {space, a,...,z}
+      b. ciphertext character
+5. If mono, key length is 27
+   If poly, key length can be <<27 (much smaller than 27)
+6. Encryption algorithm uses coin generation [0,1] and compares
+   the value to prob_random_character to decide random or not
+7. Program should work for increasing values for 
+   prob_of_random_ciphertext (e.g., 0.05, 0.10, 0.15, etc)
+
+'''
 
 import os
 import sys
@@ -59,13 +62,19 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
         ciphertext_pointer += 1
     return ''.join(c)
 
+# Todo: Make decryption try more combinations of keys that we generate.
+# Todo: Generate "x" random key combinations and run "y" amount of times. 
+# Establish a value such as 70 or 80 percent match for a guess to be "valid". 
+# We do not know the key used for encryption so our program needs to try many 
+# different keys and see if we can get a good match for the plaintext.
+# Key must be length 27 for monoalphabetic substitution
+# key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
 def decrypt(ciphertext, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
     t = len(key)
     pt = []
     L = len(ciphertext)
-    
     while ciphertext_pointer < L:
         j = (ciphertext_pointer % t) + 1 # Shift value
         c_val = keyspace.index(ciphertext[ciphertext_pointer])
@@ -74,7 +83,6 @@ def decrypt(ciphertext, key, prob_of_random_ciphertext):
         pt.append(plain_val)
         message_pointer += 1
         ciphertext_pointer += 1
-        
     return ''.join(pt)
 
 # Detect random characters based on frequency analysis. If a character appears infrequently,
@@ -82,15 +90,13 @@ def decrypt(ciphertext, key, prob_of_random_ciphertext):
 def detect_random_characters(decrypted_text, threshold=0.01):
     letter_freqs = Counter(decrypted_text)
     total_chars = len(decrypted_text)
-    
     # Estimate the frequency of each character
     char_probabilities = {char: count / total_chars for char, count in letter_freqs.items()}
-    
     # Identify characters with very low frequency as "random"
     random_indices = [i for i, char in enumerate(decrypted_text) if char_probabilities.get(char, 0) < threshold]
-    
     return random_indices
 
+# Removes characters deemed random from the decrypted text
 def filter_random_chars(decrypted_text, random_indices):
     return ''.join([char for i, char in enumerate(decrypted_text) if i not in random_indices])
 
@@ -112,7 +118,6 @@ def ngram_similarity(decrypted_text, plaintext, n=3):
     
     return (intersection / total) * 100  # Return similarity as a percentage
 
-
 def detect_random_characters_with_confidence(decrypted_text, model, n=3):
     random_char_confidence = []
     for i in range(len(decrypted_text) - n + 1):
@@ -128,36 +133,42 @@ def filter_low_confidence_chars(decrypted_text, confidence_scores, threshold=0.1
 def word_similarity(decrypted_text, plaintext):
     decrypted_words = set(decrypted_text.split())
     reference_words = set(plaintext.split())
-    
     intersection = len(decrypted_words & reference_words)
     union = len(decrypted_words | reference_words)
-    
     return (intersection / union) * 100 
 
+# Sums up the matching characters of decrypted text and plaintext to generate
+# a score.
+# After 10 runs, the average score was 58.44% with prob_random_ciphertext = 0.1 (worst)
 def similarity_score(decrypted_text, plaintext):
     # Compare the two texts and count the number of matching characters
     score = sum(1 for a, b in zip(decrypted_text, plaintext) if a == b)
     return score
 
 # Similar to similarity_score but is more flexible when there are mismatches
+# After 10 runs, the average score was 85.20% with prob_random_ciphertext = 0.1
 def levenshtein_similarity(decrypted_text, plaintext):
     distance = Levenshtein.distance(decrypted_text, plaintext)
     max_len = max(len(decrypted_text), len(plaintext))
     return (1 - (distance / max_len)) * 100  
 
 # Combines Levenshtein Distance similarity approach with word similarity approach.
-# Uses arbritrarily established weights based on how important each one is for
-# correctness.
+# After 10 runs, the average score was 85.50% at weights 0.9, 0.1 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 85.40% at weights 0.8, 0.2 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 85.70% at weights 0.7, 0.3 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 86.07% at weights 0.6, 0.4 with prob_random_ciphertext = 0.1 (highest)
+# After 10 runs, the average score was 85.84% at weights 0.5, 0.5 with prob_random_ciphertext = 0.1
 def hybrid_similarity(decrypted_text, plaintext):
     levenshtein_score = levenshtein_similarity(decrypted_text, plaintext)
     word_score = word_similarity(decrypted_text, plaintext)
-    
-    return (0.7 * levenshtein_score + 0.3 * word_score)
+    return (0.5 * levenshtein_score + 0.5 * word_score)
 
-# Lowest: 82%, Highest: 87% With prob_random_ciphertext = 0.1, weights 0.9, 0.1
-# Lowest: 84.32%, Highest: 87.51% With prob_random_ciphertext = 0.1, weights 0.8, 0.2
-# Lowest: 84.22%, Highest: 86.71% With prob_random_ciphertext = 0.1, weights 0.7, 0.3
-# Lowest: 85.11%, Highest: 86.11% With prob_random_ciphertext = 0.1, weights 0.6, 0.4
+# Combines Levenshtein Distance similarity approach with word similarity approach and random character detection.
+# After 10 runs, the average score was 85.80% at weights 0.9, 0.1 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 85.57% at weights 0.8, 0.2 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 84.87% at weights 0.7, 0.3 with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 86.41% at weights 0.6, 0.4 with prob_random_ciphertext = 0.1 (highest)
+# After 10 runs, the average score was 85.08% at weights 0.5, 0.5 with prob_random_ciphertext = 0.1
 def hybrid_similarity_with_random_detection(decrypted_text, plaintext):
     random_indices = detect_random_characters(decrypted_text, threshold=0.01)
     filtered_decrypted = filter_random_chars(decrypted_text, random_indices)
@@ -166,15 +177,13 @@ def hybrid_similarity_with_random_detection(decrypted_text, plaintext):
     # Use Levenshtein and other similarity measures on filtered texts
     levenshtein_score = levenshtein_similarity(filtered_decrypted, filtered_reference)
     word_score = word_similarity(filtered_decrypted, filtered_reference)
-    
-    return (0.6 * levenshtein_score + 0.4 * word_score)
+    return (0.5 * levenshtein_score + 0.5 * word_score)
 
-# 86.61, 87.01, 87.31, 87.41, 88.01, 88.31, 88.91, 89.31, 89.41, 89.71% with prob_random_ciphertext = 0.1
+# After 10 runs, the average score was 88.44% with prob_random_ciphertext = 0.1 (best)
 def dynamic_hybrid_similarity(decrypted_text, plaintext, prob_random_ciphertext):
     levenshtein_score = levenshtein_similarity(decrypted_text, plaintext)
     ngram_score = ngram_similarity(decrypted_text, plaintext, n=4)
     word_score = word_similarity(decrypted_text, plaintext)
-    
     # Dynamically adjust weights based on the random character probability
     if prob_random_ciphertext > 0.1:
         return (0.6 * levenshtein_score + 0.4 * ngram_score)
@@ -184,53 +193,54 @@ def dynamic_hybrid_similarity(decrypted_text, plaintext, prob_random_ciphertext)
 def find_best_plaintext_match(decrypted_text, PT):
     best_score = -1
     matched_PT_idx = -1
-    
     for i, pt in enumerate(PT):
         #score = similarity_score(decrypted_text, pt)
         #score = levenshtein_similarity(decrypted_text, pt)
+        #score = hybrid_similarity(decrypted_text, pt)
         #score = hybrid_similarity_with_random_detection(decrypted_text, pt)
         score = dynamic_hybrid_similarity(decrypted_text, pt, prob_random_ciphertext)
-        print(f"Similarity score with PT[{i}]: {score:.2f}")
+        #print(f"Similarity score with PT[{i}]: {score:.2f}")
         if score > best_score:
             best_score = score
             matched_PT_idx = i
-    
     return matched_PT_idx 
     
 def main():
     pt_num = 0
     # Key must be length 27 for monoalphabetic substitution
-    # To Do: Generate "x" random key combinations and run "y" amount of times. Establish a value
-    # such as 70 or 80 percent match for a guess to be "valid". Why? We do not know the key
-    # used for encryption so our program needs to try many different keys and see if we can 
-    # get a match for the plaintext.
     key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
-    
     iters = 1
     wrong = 0
-    
-    while iters < 1001:
-        print("-----------------------------------------------------")
-        print("Iter:", iters)
-        print("Message: ")
-        print(' ')
-        print(PT[pt_num])
-        print("Ciphertext: ")
-        print(' ')
-        encrypted_text = encrypt(pt_num, key, prob_random_ciphertext)
-        #print(encrypted_text)
-        print("Decrypted: ")
-        print(' ')
-        decrypted_text = decrypt(encrypted_text, key, prob_random_ciphertext)
-        #print(decrypted_text)
-        print("My plaintext guess is:")
-        matched_PT_idx = find_best_plaintext_match(decrypted_text, PT)
-        if PT[matched_PT_idx] != PT[pt_num]:
-            wrong += 1
-        #print(PT[matched_PT_idx])
-        iters += 1
-        
-    print(f"{((iters - wrong)/iters) * 100:.2f}% correct")
+    runs = 0
+    total_score = 0
+    while runs < 10:
+        wrong = 0
+        iters = 1
+        while iters < 1001:
+            print("-----------------------------------------------------")
+            print("Iter:", iters)
+            #print("Message: ")
+            #print(' ')
+            #print(PT[pt_num])
+            #print("Ciphertext: ")
+            #print(' ')
+            encrypted_text = encrypt(pt_num, key, prob_random_ciphertext)
+            #print(encrypted_text)
+            #print("Decrypted: ")
+            #print(' ')
+            decrypted_text = decrypt(encrypted_text, key, prob_random_ciphertext)
+            #print(decrypted_text)
+            print("My plaintext guess is:")
+            matched_PT_idx = find_best_plaintext_match(decrypted_text, PT)
+            if PT[matched_PT_idx] != PT[pt_num]:
+                wrong += 1
+            print(PT[matched_PT_idx])
+            iters += 1
+        score = ((iters - wrong)/iters) * 100
+        total_score += score
+        runs += 1
+
+    print(f"After {runs} runs, the average score was {(total_score/runs):.2f}%")
 
 if __name__ == "__main__":
     main()
