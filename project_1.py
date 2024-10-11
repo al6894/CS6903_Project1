@@ -20,6 +20,7 @@ import os
 import sys
 import random
 import Levenshtein
+from collections import Counter
 
 PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest hastes spades fevers cause wisped overdecorates linked smitten trickle scanning cognize oaken casework significate influenceable precontrived clockers defalcation fruitless splintery kids placidness regenerate harebrained liberalism neuronic clavierist attendees matinees prospectively bubbies longitudinal raving relaxants rigged oxygens chronologist briniest tweezes profaning abeyances fixity gulls coquetted budgerigar drooled unassertive shelter subsoiling surmounted frostlike jobbed hobnailed fulfilling jaywalking testabilit",
       "protectorates committeemen refractory narcissus bridlers weathercocks occluding orchectomy syncoms denunciation chronaxy imperilment incurred defrosted beamy opticopupillary acculturation scouting curiousest tosh preconscious weekday reich saddler politicize mercerizes saucepan bifold chit reviewable easiness brazed essentially idler dependable predicable locales rededicated cowbird kvetched confusingly airdrops dreggier privileges tempter anaerobes glistened sartorial distrustfulness papillary ughs proctoring duplexed pitas traitorously unlighted cryptographer odysseys metamer either meliorat",
@@ -76,73 +77,75 @@ def decrypt(ciphertext, key, prob_of_random_ciphertext):
         
     return ''.join(pt)
 
-def word_similarity(decrypted_text, reference_text):
+# Detect random characters based on frequency analysis. If a character appears infrequently,
+# maybe it is a random character and its position is recorded.
+def detect_random_characters(decrypted_text, threshold=0.01):
+    letter_freqs = Counter(decrypted_text)
+    total_chars = len(decrypted_text)
+    
+    # Estimate the frequency of each character
+    char_probabilities = {char: count / total_chars for char, count in letter_freqs.items()}
+    
+    # Identify characters with very low frequency as "random"
+    random_indices = [i for i, char in enumerate(decrypted_text) if char_probabilities.get(char, 0) < threshold]
+    
+    return random_indices
+
+def filter_random_chars(decrypted_text, random_indices):
+    return ''.join([char for i, char in enumerate(decrypted_text) if i not in random_indices])
+
+# Compares the similarity of words.
+def word_similarity(decrypted_text, plaintext):
     decrypted_words = set(decrypted_text.split())
-    reference_words = set(reference_text.split())
+    reference_words = set(plaintext.split())
     
     intersection = len(decrypted_words & reference_words)
     union = len(decrypted_words | reference_words)
     
-    return (intersection / union) * 100  # Return similarity as a percentage
+    return (intersection / union) * 100 
 
-def similarity_score(decrypted_text, reference_text):
+def similarity_score(decrypted_text, plaintext):
     # Compare the two texts and count the number of matching characters
-    score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
+    score = sum(1 for a, b in zip(decrypted_text, plaintext) if a == b)
     return score
 
-def levenshtein_similarity(decrypted_text, reference_text):
-    distance = Levenshtein.distance(decrypted_text, reference_text)
-    max_len = max(len(decrypted_text), len(reference_text))
-    return (1 - (distance / max_len)) * 100  # Return similarity as a percentage
+# Similar to similarity_score but is more flexible when there are mismatches
+def levenshtein_similarity(decrypted_text, plaintext):
+    distance = Levenshtein.distance(decrypted_text, plaintext)
+    max_len = max(len(decrypted_text), len(plaintext))
+    return (1 - (distance / max_len)) * 100  
 
-def hybrid_similarity(decrypted_text, reference_text):
-    levenshtein_score = levenshtein_similarity(decrypted_text, reference_text)
-    word_score = word_similarity(decrypted_text, reference_text)
+# Combines Levenshtein Distance similarity approach with word similarity approach.
+# Uses arbritrarily established weights based on how important each one is for
+# correctness.
+def hybrid_similarity(decrypted_text, plaintext):
+    levenshtein_score = levenshtein_similarity(decrypted_text, plaintext)
+    word_score = word_similarity(decrypted_text, plaintext)
     
-    # Combine both methods, e.g., 70% weight on Levenshtein, 30% on word matching
     return (0.7 * levenshtein_score + 0.3 * word_score)
-
-# def find_best_plaintext_match(decrypted_text, PT):
-#     best_score = -1
-#     best_match_index = -1
-    
-#     for i, pt in enumerate(PT):
-#         score = similarity_score(decrypted_text, pt)
-#         print(f"Similarity score with PT[{i}]: {score}")
-#         if score > best_score:
-#             best_score = score
-#             best_match_index = i
-    
-#     return best_match_index  # Return the index of the best matching plaintext
-
-# def find_best_plaintext_match(decrypted_text, PT):
-#     best_score = -1
-#     best_match_index = -1
-    
-#     for i, pt in enumerate(PT):
-#         score = levenshtein_similarity(decrypted_text, pt)
-#         print(f"Similarity score with PT[{i}]: {score:.2f}")
-#         if score > best_score:
-#             best_score = score
-#             best_match_index = i
-    
-#     return best_match_index  # Return the index of the best matching plaintext
 
 def find_best_plaintext_match(decrypted_text, PT):
     best_score = -1
-    best_match_index = -1
+    matched_PT_idx = -1
     
     for i, pt in enumerate(PT):
+        #score = similarity_score(decrypted_text, pt)
+        #score = levenshtein_similarity(decrypted_text, pt)
         score = hybrid_similarity(decrypted_text, pt)
-        print(f"Hybrid similarity score with PT[{i}]: {score:.2f}")
+        print(f"Similarity score with PT[{i}]: {score:.2f}")
         if score > best_score:
             best_score = score
-            best_match_index = i
+            matched_PT_idx = i
     
-    return best_match_index  # Return the index of the best matching plaintext
+    return matched_PT_idx 
     
 def main():
     pt_num = 0
+    # Key must be length 27 for monoalphabetic substitution
+    # To Do: Generate "x" random key combinations and run "y" amount of times. Establish a value
+    # such as 70 or 80 percent match for a guess to be "valid". Why? We do not know the key
+    # used for encryption so our program needs to try many different keys and see if we can 
+    # get a match for the plaintext.
     key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
     
     iters = 1
