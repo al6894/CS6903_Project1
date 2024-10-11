@@ -1,3 +1,21 @@
+# Conditions:
+# 1. No access to key
+# 2. Part of the encryption scheme is hidden
+
+# Known:
+# 1. Key is a sequence of t numbers between 0 and 26
+# 2. Ciphertext looks like a sequence of symbols {space, a,..,z}
+# 3. Program will be run on different L, u, and t (ex: L=600, u=5, t between 1 and 20)
+# 4. The encryption algorithm can choose the next character from m[i] as:
+#       a. random value in {space, a,...,z}
+#       b. ciphertext character
+# 5. If mono, key length is 27
+#    If poly, key length can be <<27 (much smaller than 27)
+# 6. Encryption algorithm uses coin generation [0,1] and compares
+#    the value to prob_random_character to decide random or not
+# 7. Program should work for increasing values for 
+#    prob_of_random_ciphertext (e.g., 0.05, 0.10, 0.15, etc)
+
 import os
 import sys
 import random
@@ -9,93 +27,78 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
       "headmaster attractant subjugator peddlery vigil dogfights pixyish comforts aretes felinities copycat salerooms schmeering institutor hairlocks speeder composers dramatics eyeholes progressives reminiscent hermaphrodism simultaneous spondaics hayfork armory refashioning battering darning tapper pancaked unaffected televiewer mussiness pollbook sieved reclines restamp cohosh excludes homelier coacts refashioned loiterer prospectively encouragers biggest pasters modernity governorships crusted buttoned wallpapered enamors supervisal nervily groaning disembody communion embosoming tattles pancakes"
       ]
 
-spaces = [62,60,68,63,61]
-
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
+prob_random_ciphertext = 0.05
 
-test_prob_random_ciphertext = 0.35
-
-
-def encrypt(pt_number, key, probability_of_random_ciphertext):
+# Function to test decryption
+def encrypt(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
     num_rand_characters = 0
     t = len(key)
-    j = 0
-    c = []
+    c = [] 
     m = PT[pt_number]
-    L = len(m)
-    max_loops = 5
-    loop_count = 0
-    while (ciphertext_pointer < (L+num_rand_characters)):
-        #loop_count+=1
-        #if(loop_count > max_loops):
-        #    break
-        coin_value = random.uniform(0,1)
-        #print(str(probability_of_random_ciphertext))
-        #print(str(coin_value))
-        #print(str(probability_of_random_ciphertext <= coin_value))
-        if (probability_of_random_ciphertext <= coin_value <= 1):
-            j = (message_pointer%t) + 1
-            # print(str(j))
-            shift_val = keyspace.index(key[j%t])
-            m_val = keyspace.index(m[message_pointer])
-            new_val = (shift_val + m_val)%len(keyspace)
-            c.append(keyspace[new_val])
-            message_pointer+=1
-            ciphertext_pointer+=1
-        else:
-            rand_char_pos = random.randint(0,26)
-            c.append(keyspace[rand_char_pos])
-            ciphertext_pointer+=1
-            num_rand_characters+=1
+    L = len(m) # Length of the message
+    while (ciphertext_pointer < (L + num_rand_characters)):
+        coin_value = random.uniform(0,1) # coin generation return value [0,1]
+        
+        # Case where we encrypt and return ciphertext
+        if (prob_of_random_ciphertext <= coin_value <= 1):
+            j = (message_pointer % t) + 1 # Shift value
+            print("j: ",j)
+            key_shift = key[j % t]
+            print("key shift: ", key_shift)
+            message_char_pos = keyspace.index(m[message_pointer])
+            shifted_char = keyspace[(message_char_pos + key_shift) % len(keyspace)] # Shift the message char by j pos
+            c.append(shifted_char) # Append shifted message character to ciphertext list
+            message_pointer += 1
+        else: # Insert random value
+            rand_char = keyspace[random.randint(0,26)]
+            c.append(rand_char)
+            num_rand_characters += 1
+        ciphertext_pointer += 1
     return c
 
-def decrypt(ciphertext, key, probability_of_random_ciphertext):
+def decrypt(ciphertext, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
-    num_rand_characters = 0
-    key_pos = 0
     t = len(key)
-    j = 0
     pt = []
     L = len(ciphertext)
-    while ciphertext_pointer < L:
-        c_val = keyspace.index(ciphertext[ciphertext_pointer])
-        j = (ciphertext_pointer%t)+1
-        shift_val = keyspace.index(key[j%t])
-        new_val = (c_val - shift_val)%len(keyspace)
-        pt.append(keyspace[new_val])
-        message_pointer+=1
-        ciphertext_pointer+=1
-    return ''.join(pt)
-    '''
-    while ciphertext_pointer < L:
-        coin_value = random.uniform(0,1)  # Generate a random coin flip value
-
-        if probability_of_random_ciphertext <= coin_value <= 1:
-            j = (message_pointer % t) + 1  # Same logic as the encryption function
-            shift_val = keyspace.index(key[j % t])  # Find the shift value
-            c_val = keyspace.index(ciphertext[ciphertext_pointer])  # Get the ciphertext value
-            original_val = (c_val - shift_val) % len(keyspace)  # Reverse the shift
-            pt.append(keyspace[original_val])  # Append the decrypted character to plaintext
-            message_pointer += 1
-        else:
-            # If it's a random character, skip it (don't increase message_pointer)
-            num_rand_characters += 1
-        
-        ciphertext_pointer += 1  # Always move the ciphertext pointer
     
-    return ''.join(pt)  # Join the list into a string
-    '''
-def attack(ciphertext):
+    while ciphertext_pointer < L:
+        j = (ciphertext_pointer % t) + 1 # Shift value
+        c_val = keyspace.index(ciphertext[ciphertext_pointer])
+        key_shift = key[j % t]
+        plain_val = keyspace[(c_val - key_shift) % len(keyspace)] # Reverse the shift
+        pt.append(plain_val)
+        message_pointer += 1
+        ciphertext_pointer += 1
+        
+    return ''.join(pt)
+
+def similarity_score(decrypted_text, reference_text):
+    # Compare the two texts and count the number of matching characters
+    score = sum(1 for a, b in zip(decrypted_text, reference_text) if a == b)
+    return score
+
+def find_best_plaintext_match(decrypted_text, PT):
+    best_score = -1
+    best_match_index = -1
+    
+    for i, pt in enumerate(PT):
+        score = similarity_score(decrypted_text, pt)
+        print(f"Similarity score with PT[{i}]: {score}")
+        if score > best_score:
+            best_score = score
+            best_match_index = i
+    
+    return best_match_index  # Return the index of the best matching plaintext
     
 def main():
-    # keyspace_length = len(keyspace)
-    # print(str(keyspace_length))
-    pt_num = 1
-    key = 'a'
-    c = encrypt(pt_num,key,test_prob_random_ciphertext)
+    pt_num = 0
+    key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
+    c = encrypt(pt_num, key, prob_random_ciphertext)
     str_c = ''
     for x in c:
         str_c+=x
@@ -107,11 +110,18 @@ def main():
     print("Ciphertext: ")
     print(" ")
     print(str_c)
-    m_d = decrypt(c,key, test_prob_random_ciphertext)
+    decrypted_text = decrypt(c,key, prob_random_ciphertext)
     print("------------------------------------")
     print("Decrypted: ")
     print(" ")
-    print(m_d)
+    print(decrypted_text)
+    print("------------------------------------")
+    
+    matched_PT_idx = find_best_plaintext_match(decrypted_text, PT)
+    print("------------------------------------")
+    print(" ")
+    print("My plaintext guess is:")
+    print(PT[matched_PT_idx])
 
 if __name__ == "__main__":
     main()
