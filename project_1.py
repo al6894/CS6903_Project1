@@ -60,15 +60,15 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
     L = len(m) # Length of the message
     while (ciphertext_pointer < (L + num_rand_characters)):
         coin_value = random.uniform(0,1) # coin generation return value [0,1]
-        # Case where we encrypt and return ciphertext
+        # Case 1: Encrypt and return ciphertext
         if (prob_of_random_ciphertext <= coin_value <= 1):
             j = (message_pointer % t) + 1 # Shift value
             key_shift = key[j % t]
             message_char_pos = keyspace.index(m[message_pointer])
-            shifted_char = keyspace[(message_char_pos + key_shift) % len(keyspace)] # Shift the message char by j pos
-            c.append(shifted_char) # Append shifted message character to ciphertext list
+            shifted_char = keyspace[(message_char_pos + key_shift) % len(keyspace)] # Shift the message char 
+            c.append(shifted_char) 
             message_pointer += 1
-        else: # Insert random value
+        else: # Case 2: Insert random value
             rand_char = keyspace[random.randint(0,26)]
             c.append(rand_char)
             num_rand_characters += 1
@@ -77,11 +77,11 @@ def encrypt(pt_number, key, prob_of_random_ciphertext):
 
 # Todo: Make decryption try more combinations of keys that we generate.
 # Todo: Generate "x" random key combinations and run "y" amount of times. 
-# Establish a value such as 70 or 80 percent match for a guess to be "valid". 
+# Establish a percent match value for a guess to be "valid". 
 # We do not know the key used for encryption so our program needs to try many 
 # different keys and see if we can get a good match for the plaintext.
 # Key must be length 27 for monoalphabetic substitution
-# key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
+# Ex: key = [5, 18, 20, 7, 12, 3, 26, 11, 15, 9, 21, 0, 8, 1, 14, 25, 4, 22, 13, 2, 10, 24, 16, 17, 23, 19, 6]
 def decrypt(ciphertext, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
@@ -90,9 +90,9 @@ def decrypt(ciphertext, key, prob_of_random_ciphertext):
     L = len(ciphertext)
     while ciphertext_pointer < L:
         j = (ciphertext_pointer % t) + 1 # Shift value
-        c_val = keyspace.index(ciphertext[ciphertext_pointer])
+        c_val = keyspace.index(ciphertext[ciphertext_pointer]) # Get ciphertext char
         key_shift = key[j % t]
-        plain_val = keyspace[(c_val - key_shift) % len(keyspace)] # Reverse the shift
+        plain_val = keyspace[(c_val - key_shift) % len(keyspace)] # Reverse ciphertext char's shift
         pt.append(plain_val)
         message_pointer += 1
         ciphertext_pointer += 1
@@ -186,8 +186,6 @@ def hybrid_similarity_with_random_detection(decrypted_text, plaintext):
     random_indices = detect_random_characters(decrypted_text, threshold=0.01)
     filtered_decrypted = filter_random_chars(decrypted_text, random_indices)
     filtered_reference = filter_random_chars(plaintext, random_indices)
-    
-    # Use Levenshtein and other similarity measures on filtered texts
     levenshtein_score = levenshtein_similarity(filtered_decrypted, filtered_reference)
     word_score = word_similarity(filtered_decrypted, filtered_reference)
     return (0.5 * levenshtein_score + 0.5 * word_score)
