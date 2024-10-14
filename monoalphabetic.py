@@ -36,15 +36,10 @@ prob_random_ciphertext = 0.05
 max_number_to_return = 6
 
 def return_highest_vals(freq_list):
-    temp_list = []
-    for val in freq_list:
-        temp_list.append(val)
+    temp_list = freq_list.copy()
     temp_list.sort()
-    top_vals = []
-    bottom_vals = []
-    for x in range(0,max_number_to_return):
-        bottom_vals.append(temp_list[x])
-        top_vals.append(temp_list[len(keyspace)-x-1])
+    top_vals = temp_list[-max_number_to_return:][::-1]
+    bottom_vals = temp_list[:max_number_to_return]
     return top_vals, bottom_vals
     
 
@@ -76,14 +71,15 @@ def encrypt_mono(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
     num_rand_characters = 0
-    t = len(key)
     c = []
     m = PT[pt_number] #message
     L = len(m) #message length
     while(ciphertext_pointer < (L+num_rand_characters)):
         coin_value = random.uniform(0,1)
         if(prob_of_random_ciphertext <= coin_value <=1):
-            c.append(keyspace[key[keyspace.index(m[message_pointer])]])
+            current_char = keyspace.index(m[message_pointer]) #find index of char in keyspace
+            replacement_char = keyspace[key[current_char]] #index into the key to find replacement in keyspace
+            c.append(replacement_char) #append substituted char to build ciphertext
             message_pointer +=1
         else:
             rand_char = keyspace[random.randint(0,26)]
@@ -103,23 +99,23 @@ def decrypt_mono(ciphertext, key, prob_of_random_ciphertext):
         ciphertext_pointer += 1
     return ''.join(dec_pt)
 
+
 def main():
     test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
     CT = encrypt_mono(1,test_key,prob_random_ciphertext)
+    print("-------------------------------")
+    print("Ciphertext:")
+    print(CT,"\n")
     CT_len = len(CT)
-    print("CT_len: " + str(CT_len))
+    print("CT_len:",CT_len,"\n")
     CT_decrypt = decrypt_mono(CT,test_key, prob_random_ciphertext)
-    print(CT)
-    print("")
+    print("Decrypted Ciphertext:")
     print(CT_decrypt)
+    print("------------------------------- \n")
 
-    CT_freq = return_frequencies(CT)
-    
-    print(" ")
     PT_frequencies = []
     PT_max_freq = []
     PT_min_freq = []
-    PT_max_freq_index = []
     for pt_str in PT:
         freq_of_pt = return_frequencies(pt_str)
         PT_frequencies.append(freq_of_pt)
@@ -129,27 +125,25 @@ def main():
         
     count_iter = 0
     print("PT Frequencies: ")
+    print(keyspace)
     for freq_iter in range(0,len(PT_frequencies)):
         count_iter+=1
         print(PT_frequencies[freq_iter])
-        
-    print(" ")
-    for x in range(0,len(PT_max_freq)):
+    print("")
+    
+    for x in range(0,len(PT)):
         # observed that space and letter e are highest frequency of all strings
-        print("PT:" + str(x))
-        print("Highest:")
-        print(PT_max_freq[x])
-        print("Lowerst:")
-        print(PT_min_freq[x])
+        print("PT:", x)
+        print("Highest:", PT_max_freq[x])
+        print("Lowest: ", PT_min_freq[x])
 
-    #CT_highest = max(CT_freq)
+    print("")
+    CT_freq = return_frequencies(CT)
     CT_highest,CT_lowest = return_highest_vals(CT_freq)
-    print("CT Frequencies")
+    print("CT Frequencies:")
     print(CT_freq)
-    print("CT Highest")
-    print(CT_highest)
-    print("CT Lowest")
-    print(CT_lowest)
+    print("CT Highest:", CT_highest)
+    print("CT Lowest: ", CT_lowest)
 
 if __name__ == "__main__":
     main()
