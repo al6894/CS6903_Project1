@@ -1,23 +1,3 @@
-'''
-Conditions:
-1. No access to key
-2. Part of the encryption scheme is hidden
-
-Known:
-1. Key is a sequence of t numbers between 0 and 26
-2. Ciphertext looks like a sequence of symbols {space, a,..,z}
-3. Program may be ran on different L, u, and t (ex: L=600, u=5, t between 1 and 20)
-4. The encryption algorithm can choose the next character from m[i] as:
-      a. random value in {space, a,...,z}
-      b. ciphertext character
-5. If mono, key length is 27
-   If poly, key length can be <<27 (much smaller than 27)
-6. Encryption algorithm uses coin generation [0,1] and compares
-   the value to prob_random_character to decide random or not
-7. Program should work for increasing values for 
-   prob_of_random_ciphertext (e.g., 0.05, 0.10, 0.15, etc)
-'''
-
 import os
 import sys
 import random
@@ -32,7 +12,7 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
       ]
 # keyspace: {space, a,...,z}
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-prob_random_ciphertext = 0.05
+prob_random_ciphertext = 0.1
 max_number_to_return = 6
 
 def return_highest_vals(freq_list):
@@ -44,28 +24,11 @@ def return_highest_vals(freq_list):
     
 
 def return_frequencies(input_string):
-    to_return = []
-    #Counter(input_string) = 
-    for x in range(0,len(keyspace)):
-        count = 0
-        for c in input_string:
-            if c == keyspace[x]:
-                count+=1
-        to_return.append(count)
+    # Get the frequency of each character in input_string
+    frequencies = Counter(input_string)
+    # Return the counts in the order of keyspace
+    to_return = [frequencies.get(char, 0) for char in keyspace]
     return to_return
-
-# Potential function to generate random keys, up to 10000.
-# (currently not in use)
-def generate_random_keys(num_keys):
-    keys = []
-    for _ in range(num_keys):
-        # Generate a random key of 27 numbers between 0 and 26
-        key = [random.randint(0, 26) for _ in range(27)]
-        keys.append(key)
-    return keys
-
-# Example usage: Generate 10,000 keys
-random_keys = generate_random_keys(10000)
 
 def encrypt_mono(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
@@ -99,6 +62,37 @@ def decrypt_mono(ciphertext, key, prob_of_random_ciphertext):
         ciphertext_pointer += 1
     return ''.join(dec_pt)
 
+# Frequency analysis by itself only works for 0.05 random ciphertext
+def isCandidate(PT_freq, CT_freq):
+    for i in range(len(keyspace)):
+        if PT_freq[i] > CT_freq[i]:
+            return False
+    return True
+
+def guess(PT_guess):
+    print("My plaintext guess:")
+    print(PT_guess)
+
+def print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq):
+    CT_highest,CT_lowest = return_highest_vals(CT_freq)
+    CT_freq.sort()
+    for x in range(0,len(PT)):
+        count_iter = 0
+        print("PT Frequencies: ")
+        print(keyspace)
+        for freq_iter in range(0,len(PT_frequencies)):
+            count_iter+=1
+            print(PT_frequencies[freq_iter])
+        print("")
+        # observed that space and letter e are highest frequency of all strings
+        print("PT:", x)
+        print("CT Highest:", CT_highest)
+        print("Highest:", PT_max_freq[x])
+        print("CT Lowest: ", CT_lowest)
+        print("Lowest: ", PT_min_freq[x])
+        PT_frequencies[x].sort()
+        print("CT Freq:", CT_freq)
+        print("PT Freq:", PT_frequencies[x])
 
 def main():
     test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
@@ -106,44 +100,42 @@ def main():
     print("-------------------------------")
     print("Ciphertext:")
     print(CT,"\n")
-    CT_len = len(CT)
-    print("CT_len:",CT_len,"\n")
-    CT_decrypt = decrypt_mono(CT,test_key, prob_random_ciphertext)
-    print("Decrypted Ciphertext:")
-    print(CT_decrypt)
-    print("------------------------------- \n")
+    #CT_len = len(CT)
+    #print("CT_len:",CT_len,"\n")
+    #CT_decrypt = decrypt_mono(CT,test_key, prob_random_ciphertext)
+    #print("Decrypted Ciphertext:")
+    #print(CT_decrypt)
+    #print("------------------------------- \n")
 
+    CT_freq = return_frequencies(CT)
+    CT_freq.sort()
     PT_frequencies = []
+    PT_candidates = []
     PT_max_freq = []
     PT_min_freq = []
-    for pt_str in PT:
-        freq_of_pt = return_frequencies(pt_str)
-        PT_frequencies.append(freq_of_pt)
-        pt_highest,pt_lowest = return_highest_vals(freq_of_pt)
+    for plaintext in PT:
+        PT_freq = return_frequencies(plaintext)
+        PT_freq.sort()
+        candidate = isCandidate(PT_freq, CT_freq)
+        PT_frequencies.append(PT_freq)
+        if candidate:
+            PT_candidates.append(plaintext)
+        pt_highest,pt_lowest = return_highest_vals(PT_freq)
         PT_max_freq.append(pt_highest)
         PT_min_freq.append(pt_lowest)
+    print("-------------------------------")
+    print("Candidates:")
+    for candidate in PT_candidates:
+        print(candidate, "\n")
         
-    count_iter = 0
-    print("PT Frequencies: ")
-    print(keyspace)
-    for freq_iter in range(0,len(PT_frequencies)):
-        count_iter+=1
-        print(PT_frequencies[freq_iter])
-    print("")
+    if len(PT_candidates) == 1:
+        guess(PT_candidates[0])
+    else:
+        guess_idx = random.randint(0, len(PT_candidates))
+        guess(PT_candidates[guess_idx])
     
-    for x in range(0,len(PT)):
-        # observed that space and letter e are highest frequency of all strings
-        print("PT:", x)
-        print("Highest:", PT_max_freq[x])
-        print("Lowest: ", PT_min_freq[x])
-
-    print("")
-    CT_freq = return_frequencies(CT)
-    CT_highest,CT_lowest = return_highest_vals(CT_freq)
-    print("CT Frequencies:")
-    print(CT_freq)
-    print("CT Highest:", CT_highest)
-    print("CT Lowest: ", CT_lowest)
+    # CT_freq = return_frequencies(CT)
+    #print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq)
 
 if __name__ == "__main__":
     main()
