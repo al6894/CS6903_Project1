@@ -62,7 +62,7 @@ def return_frequencies(input_string):
     to_return = [frequencies.get(char, 0) for char in keyspace]
     return to_return
 
-def count_double_char(text):
+def count_double(text):
     count = 0
     # Loop through the text, check consecutive characters
     for i in range(len(text) - 1):  # len(text) - 1 to avoid out of range
@@ -122,20 +122,31 @@ def main():
 
     CT_freq = return_frequencies(CT)
     CT_freq.sort()
-    PT_frequencies = []
-    PT_candidates = []
-    PT_max_freq = []
-    PT_min_freq = []
-    for plaintext in PT:
-        PT_freq = return_frequencies(plaintext)
+    PT_frequencies = {}
+    PT_candidates = {}
+    #PT_max_freq = []
+    #PT_min_freq = []
+    for i in range(len(PT)):
+        PT_freq = return_frequencies(PT[i])
         PT_freq.sort()
         candidate = isCandidate(PT_freq, CT_freq)
-        PT_frequencies.append(PT_freq)
+        PT_frequencies[i] = PT_freq
         if candidate:
-            PT_candidates.append(plaintext)
-        pt_highest,pt_lowest = return_highest_vals(PT_freq)
-        PT_max_freq.append(pt_highest)
-        PT_min_freq.append(pt_lowest)
+            PT_candidates[i] = PT[i]
+        #pt_highest,pt_lowest = return_highest_vals(PT_freq)
+        #PT_max_freq.append(pt_highest)
+        #PT_min_freq.append(pt_lowest)
+        
+    num_double_chars = {}
+    for i in range(len(PT)):
+        num_double = count_double(PT[i])
+        num_double_chars[i] = num_double
+    CT_double = count_double(CT)
+    
+    for key in PT_candidates.keys():
+        if PT_candidates[key] > CT_double:
+            del PT_candidates[key]
+    
     print("-------------------------------")
     print("Candidates:")
     for candidate in PT_candidates:
