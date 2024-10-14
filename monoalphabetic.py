@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import random
 from collections import Counter
 
@@ -14,21 +15,6 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 prob_random_ciphertext = 0.1
 max_number_to_return = 6
-
-def return_highest_vals(freq_list):
-    temp_list = freq_list.copy()
-    temp_list.sort()
-    top_vals = temp_list[-max_number_to_return:][::-1]
-    bottom_vals = temp_list[:max_number_to_return]
-    return top_vals, bottom_vals
-    
-
-def return_frequencies(input_string):
-    # Get the frequency of each character in input_string
-    frequencies = Counter(input_string)
-    # Return the counts in the order of keyspace
-    to_return = [frequencies.get(char, 0) for char in keyspace]
-    return to_return
 
 def encrypt_mono(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
@@ -62,7 +48,30 @@ def decrypt_mono(ciphertext, key, prob_of_random_ciphertext):
         ciphertext_pointer += 1
     return ''.join(dec_pt)
 
+def return_highest_vals(freq_list):
+    temp_list = freq_list.copy()
+    temp_list.sort()
+    top_vals = temp_list[-max_number_to_return:][::-1]
+    bottom_vals = temp_list[:max_number_to_return]
+    return top_vals, bottom_vals
+
+def return_frequencies(input_string):
+    # Get the frequency of each character in input_string
+    frequencies = Counter(input_string)
+    # Return the counts in the order of keyspace
+    to_return = [frequencies.get(char, 0) for char in keyspace]
+    return to_return
+
+def count_double_char(text):
+    count = 0
+    # Loop through the text, check consecutive characters
+    for i in range(len(text) - 1):  # len(text) - 1 to avoid out of range
+        if text[i] == text[i + 1]:
+            count += 1
+    return count
+
 # Frequency analysis by itself only works for 0.05 random ciphertext
+# 1 candidate at 0.05, 2 at 0.1, 3 at 0.15, 4 at 0.2, 5 at 0.25+
 def isCandidate(PT_freq, CT_freq):
     for i in range(len(keyspace)):
         if PT_freq[i] > CT_freq[i]:
@@ -95,7 +104,7 @@ def print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq):
         print("PT Freq:", PT_frequencies[x])
 
 def main():
-    idx = 1
+    idx = 0
     test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
     CT = encrypt_mono(idx,test_key,prob_random_ciphertext)
     print("-------------------------------")
@@ -140,6 +149,19 @@ def main():
     
     # CT_freq = return_frequencies(CT)
     #print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq)
+    
+    
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    end_time = time.time()
+    # Calculate total time in seconds
+    elapsed_time = end_time - start_time
+    print(f"Raw elapsed time: {elapsed_time:.8f} seconds")
+
+    # Convert to minutes and seconds
+    minutes, seconds = divmod(elapsed_time, 60)
+
+    # Print result in minutes and seconds
+    print(f"Process time: {int(minutes)} minutes and {seconds:.2f} seconds")
