@@ -36,6 +36,9 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 prob_random_ciphertext = 0.05
 
+# Map out the letter frequency for each plaintext
+# 1. 
+
 # Potential function to generate random keys, up to 10000.
 # (currently not in use)
 def generate_random_keys(num_keys):
@@ -49,7 +52,27 @@ def generate_random_keys(num_keys):
 # Example usage: Generate 10,000 keys
 random_keys = generate_random_keys(10000)
 
-# Function to test decryption
+# Create a shuffled substitution key (ensure every letter is unique)
+def generate_substitution_key():
+    substitution_key = keyspace[:]  # Copy the keyspace
+    random.shuffle(substitution_key)  # Shuffle to create random mappings
+    return substitution_key
+
+# Monoalphabetic substitution encryption function
+def monoalphabetic_encrypt(plaintext, keyspace, substitution_key):
+    ciphertext = []
+    for char in plaintext:
+        if char in keyspace:
+            # Find the index of the character in the keyspace
+            char_index = keyspace.index(char)
+            # Substitute it with the corresponding character from the shuffled key
+            ciphertext.append(substitution_key[char_index])
+        else:
+            # If the character is not in the keyspace, leave it unchanged
+            ciphertext.append(char)
+    return ''.join(ciphertext)
+
+# Function to test decryption for poly
 def encrypt(pt_number, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
@@ -250,7 +273,7 @@ def main():
             #print("Ciphertext: ")
             #print(' ')
             encrypted_text = encrypt(pt_num, key, prob_random_ciphertext)
-            #print(encrypted_text)
+            print(encrypted_text)
             #print("Decrypted: ")
             #print(' ')
             decrypted_text = decrypt(encrypted_text, key, prob_random_ciphertext)
