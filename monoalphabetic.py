@@ -95,11 +95,15 @@ def print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq):
         print("PT Freq:", PT_frequencies[x])
 
 def main():
+    idx = 1
     test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
-    CT = encrypt_mono(1,test_key,prob_random_ciphertext)
+    CT = encrypt_mono(idx,test_key,prob_random_ciphertext)
     print("-------------------------------")
-    print("Ciphertext:")
-    print(CT,"\n")
+    print("Plaintext:")
+    print(PT[idx],"\n")
+    # print("-------------------------------")
+    # print("Ciphertext:")
+    # print(CT,"\n")
     #CT_len = len(CT)
     #print("CT_len:",CT_len,"\n")
     #CT_decrypt = decrypt_mono(CT,test_key, prob_random_ciphertext)
@@ -127,11 +131,11 @@ def main():
     print("Candidates:")
     for candidate in PT_candidates:
         print(candidate, "\n")
-        
+    print("-------------------------------")
     if len(PT_candidates) == 1:
         guess(PT_candidates[0])
     else:
-        guess_idx = random.randint(0, len(PT_candidates))
+        guess_idx = random.randint(0, len(PT_candidates)-1)
         guess(PT_candidates[guess_idx])
     
     # CT_freq = return_frequencies(CT)
