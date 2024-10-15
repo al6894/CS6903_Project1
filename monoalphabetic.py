@@ -81,7 +81,7 @@ def guess(PT_guess):
     print("My plaintext guess:")
     print(PT_guess)
     
-prob_random_ciphertext = 0.1
+prob_random_ciphertext = 0.75
 def main():
     runs = 0
     ngram_right = 0
