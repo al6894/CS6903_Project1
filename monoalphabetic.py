@@ -13,7 +13,6 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
       ]
 # keyspace: {space, a,...,z}
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-prob_random_ciphertext = 0.1
 max_number_to_return = 6
 
 def encrypt_mono(pt_number, key, prob_of_random_ciphertext):
@@ -37,142 +36,86 @@ def encrypt_mono(pt_number, key, prob_of_random_ciphertext):
         ciphertext_pointer += 1
     return ''.join(c)
 
-def decrypt_mono(ciphertext, key, prob_of_random_ciphertext):
-    ciphertext_pointer = 0
-    message_pointer = 0
-    t = len(key)
-    dec_pt = []
-    L = len(ciphertext)
-    while ciphertext_pointer <L:
-        dec_pt.append(keyspace[key.index(keyspace.index(ciphertext[ciphertext_pointer]))])
-        ciphertext_pointer += 1
-    return ''.join(dec_pt)
-
-def return_highest_vals(freq_list):
-    temp_list = freq_list.copy()
-    temp_list.sort()
-    top_vals = temp_list[-max_number_to_return:][::-1]
-    bottom_vals = temp_list[:max_number_to_return]
-    return top_vals, bottom_vals
-
-def return_frequencies(input_string):
-    # Get the frequency of each character in input_string
-    frequencies = Counter(input_string)
-    # Return the counts in the order of keyspace
+#Get the text's character frequency
+def get_frequency(plaintext):
+    frequencies = Counter(plaintext)
     to_return = [frequencies.get(char, 0) for char in keyspace]
     return to_return
 
-def count_double(text):
-    count = 0
-    # Loop through the text, check consecutive characters
-    for i in range(len(text) - 1):  # len(text) - 1 to avoid out of range
-        if text[i] == text[i + 1]:
-            count += 1
-    return count
-
-# Frequency analysis by itself only works for 0.05 random ciphertext
-# 1 candidate at 0.05, 2 at 0.1, 3 at 0.15, 4 at 0.2, 5 at 0.25+
+#Check if candidate is viable
 def isCandidate(PT_freq, CT_freq):
     for i in range(len(keyspace)):
         if PT_freq[i] > CT_freq[i]:
             return False
     return True
 
+#Approach 1: Check if letter frequencies are valid for a match
+def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
+    for i in range(len(PT)):
+        PT_freq = get_frequency(PT[i])
+        PT_freq.sort()
+        candidate = isCandidate(PT_freq, CT_freq)
+        if candidate:
+            PT_frequencies[i] = PT_freq
+            PT_candidates[i] = PT[i]
+
+# Approach 2: Use ngrams (more specifically a trigram in this case)
+def get_char_ngrams(text, n=5):
+    ngrams = [text[i:i+n] for i in range(len(text)-n+1)]
+    return Counter(ngrams)
+# Function to compare trigram frequencies
+def compare_ngrams(pt_ngrams, ct_ngrams):
+    # Find common n-grams between ciphertext and plaintext
+    common_ngrams = set(pt_ngrams.keys()) & set(ct_ngrams.keys())
+    score = 0
+    # Sum up the minimum count for each common trigram (how often it appears in both)
+    for ngram in common_ngrams:
+        score += min(pt_ngrams[ngram], ct_ngrams[ngram])
+    return score
+
 def guess(PT_guess):
     print("My plaintext guess:")
     print(PT_guess)
-
-def print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq):
-    CT_highest,CT_lowest = return_highest_vals(CT_freq)
-    CT_freq.sort()
-    for x in range(0,len(PT)):
-        count_iter = 0
-        print("PT Frequencies: ")
-        print(keyspace)
-        for freq_iter in range(0,len(PT_frequencies)):
-            count_iter+=1
-            print(PT_frequencies[freq_iter])
-        print("")
-        # observed that space and letter e are highest frequency of all strings
-        print("PT:", x)
-        print("CT Highest:", CT_highest)
-        print("Highest:", PT_max_freq[x])
-        print("CT Lowest: ", CT_lowest)
-        print("Lowest: ", PT_min_freq[x])
-        PT_frequencies[x].sort()
-        print("CT Freq:", CT_freq)
-        print("PT Freq:", PT_frequencies[x])
-
+prob_random_ciphertext = 0.75
 def main():
-    idx = 0
-    test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
-    CT = encrypt_mono(idx,test_key,prob_random_ciphertext)
-    print("-------------------------------")
-    print("Plaintext:")
-    print(PT[idx],"\n")
-    # print("-------------------------------")
-    # print("Ciphertext:")
-    # print(CT,"\n")
-    #CT_len = len(CT)
-    #print("CT_len:",CT_len,"\n")
-    #CT_decrypt = decrypt_mono(CT,test_key, prob_random_ciphertext)
-    #print("Decrypted Ciphertext:")
-    #print(CT_decrypt)
-    #print("------------------------------- \n")
-
-    CT_freq = return_frequencies(CT)
-    CT_freq.sort()
-    PT_frequencies = {}
-    PT_candidates = {}
-    #PT_max_freq = []
-    #PT_min_freq = []
-    for i in range(len(PT)):
-        PT_freq = return_frequencies(PT[i])
-        PT_freq.sort()
-        candidate = isCandidate(PT_freq, CT_freq)
-        PT_frequencies[i] = PT_freq
-        if candidate:
-            PT_candidates[i] = PT[i]
-        #pt_highest,pt_lowest = return_highest_vals(PT_freq)
-        #PT_max_freq.append(pt_highest)
-        #PT_min_freq.append(pt_lowest)
+    runs = 0
+    ngram_right = 0
+    freq_right = 0
+    while runs < 100:
+        test_key = [5,4,1,2,9,3,0,6,17,8,10,11,16,13,14,15,12,7,18,20,19,21,22,23,24,25,26]
+        PT_frequencies = {}
+        PT_candidates = {}
+        CT = encrypt_mono(1,test_key,prob_random_ciphertext)
+        CT_freq = get_frequency(CT)
+        CT_freq.sort()
+        compare_frequencies(PT_frequencies, PT_candidates, CT_freq)
+            
+        #CHAR NGRAMS 
+        pt_ngrams = [get_char_ngrams(text) for text in PT]
+        ct_ngrams = get_char_ngrams(CT)
+        char_ngram_scores = []
+        for i, pt_ngram in enumerate(pt_ngrams):
+            score = compare_ngrams(pt_ngram, ct_ngrams)
+            char_ngram_scores.append((i, score))  # Keep track of the score and corresponding plaintext index
+        char_ngram_scores.sort(key=lambda x: x[1], reverse=True)
+        best_match_idx, best_score = char_ngram_scores[0]
+        print(f"Best matching plaintext using char ngram is PT[{best_match_idx}] with a score of {best_score} \n")
+        print("Candidates:")
+        for candidate in PT_candidates:
+            print(PT_candidates[candidate], "\n")
         
-    num_double_chars = {}
-    for i in range(len(PT)):
-        num_double = count_double(PT[i])
-        num_double_chars[i] = num_double
-    CT_double = count_double(CT)
-    
-    for key in PT_candidates.keys():
-        if PT_candidates[key] > CT_double:
-            del PT_candidates[key]
-    
-    print("-------------------------------")
-    print("Candidates:")
-    for candidate in PT_candidates:
-        print(candidate, "\n")
-    print("-------------------------------")
-    if len(PT_candidates) == 1:
-        guess(PT_candidates[0])
-    else:
-        guess_idx = random.randint(0, len(PT_candidates)-1)
-        guess(PT_candidates[guess_idx])
-    
-    # CT_freq = return_frequencies(CT)
-    #print_frequencies(PT_max_freq, PT_min_freq, PT_frequencies, CT_freq)
-    
-    
+        if len(PT_candidates) == 1 and next(iter(PT_candidates.values())) == PT[1]:
+            freq_right += 1
+        if best_match_idx == 1:
+            ngram_right += 1
 
+        runs += 1
+    print("freq_right", freq_right)
+    print("ngram_right", ngram_right)
 if __name__ == "__main__":
     start_time = time.time()
     main()
     end_time = time.time()
-    # Calculate total time in seconds
     elapsed_time = end_time - start_time
     print(f"Raw elapsed time: {elapsed_time:.8f} seconds")
-
-    # Convert to minutes and seconds
     minutes, seconds = divmod(elapsed_time, 60)
-
-    # Print result in minutes and seconds
-    print(f"Process time: {int(minutes)} minutes and {seconds:.2f} seconds")
