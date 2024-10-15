@@ -16,12 +16,13 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
 max_number_to_return = 6
 
+# Function used to generate ciphertext
 def encrypt_mono(pt_idx, key, prob_of_random_ciphertext):
     ciphertext_pointer = 0
     message_pointer = 0
     num_rand_characters = 0
     c = []
-    m = PT[pt_idx] # message
+    m = PT[pt_idx] 
     L = len(m)
     while(ciphertext_pointer < (L+num_rand_characters)):
         coin_value = random.uniform(0,1)
@@ -43,7 +44,7 @@ def get_frequency(plaintext):
     to_return = [frequencies.get(char, 0) for char in keyspace]
     return to_return
 
-# Check if candidate is viable
+# Check if candidate is viable (not in use)
 def isCandidate(PT_freq, CT_freq):
     # print(PT_freq)
     # print(CT_freq)
@@ -52,7 +53,7 @@ def isCandidate(PT_freq, CT_freq):
             return False
     return True
 
-#Approach 1: Check if letter frequencies are valid for a match
+#Approach 1: Check if letter frequencies are valid for a match (only works up to 0.1 random)
 def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
     for i in range(len(PT)):
         PT_freq = get_frequency(PT[i])
@@ -65,9 +66,11 @@ def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
             PT_candidates[i] = PT[i]
 
 # Approach 2: Use ngrams (more specifically a trigram in this case)
+# Better than frequency analysis after 0.1 random
 def get_char_ngrams(text, n=4):
     ngrams = [text[i:i+n] for i in range(len(text)-n+1)]
     return Counter(ngrams)
+
 # Function to compare trigram frequencies
 def compare_ngrams(pt_ngrams, ct_ngrams):
     # Find common n-grams between ciphertext and plaintext
@@ -108,36 +111,64 @@ def guess(PT_guess):
     print(PT_guess)
     
 def main():
-    runs = 0
-    freq_right = 0
     prob_random_ciphertext = 0.75  # Increase the probability to test robustness
-    while runs < 100:
-        test_key = random.sample(range(len(keyspace)), len(keyspace))
-        pt_idx = random.randint(0, len(PT)-1)
-        CT = encrypt_mono(pt_idx, test_key, prob_random_ciphertext)
-        ct_freq = get_relative_freq(CT)
+    test_key = random.sample(range(len(keyspace)), len(keyspace))
+    pt_idx = random.randint(0, len(PT)-1)
+    print("Plaintext Used:")
+    print(PT[pt_idx], '\n')
+    CT = encrypt_mono(pt_idx, test_key, prob_random_ciphertext)
+    ct_freq = get_relative_freq(CT)
+    print("Ciphertext Generated:")
+    print(CT, '\n')
 
-        # Store distances for each plaintext
-        distances = []
-        for i in range(len(PT)):
-            pt_text = PT[i]
-            pt_freq = get_relative_freq(pt_text)
-            # Adjust for random insertions
-            adjusted_pt_freq = adjust_freq(pt_freq, prob_random_ciphertext)
-            distance = compare_frequency_profiles(ct_freq, adjusted_pt_freq)
-            distances.append((i, distance))
+    # Store distances for each plaintext
+    distances = []
+    for i in range(len(PT)):
+        pt_text = PT[i]
+        pt_freq = get_relative_freq(pt_text)
+        # Adjust for random insertions
+        adjusted_pt_freq = adjust_freq(pt_freq, prob_random_ciphertext)
+        distance = compare_frequency_profiles(ct_freq, adjusted_pt_freq)
+        distances.append((i, distance))
 
-        distances.sort(key=lambda x: x[1])
-        best_match_idx, best_distance = distances[0]
+    distances.sort(key=lambda x: x[1])
+    best_match_idx, best_distance = distances[0]
+    
+    # runs = 0
+    # freq_right = 0
+    # while runs < 100:
+    #     test_key = random.sample(range(len(keyspace)), len(keyspace))
+    #     pt_idx = random.randint(0, len(PT)-1)
+    #     CT = encrypt_mono(pt_idx, test_key, prob_random_ciphertext)
+    #     ct_freq = get_relative_freq(CT)
 
-        if best_match_idx == pt_idx:
-            freq_right += 1
+    #     # Store distances for each plaintext
+    #     distances = []
+    #     for i in range(len(PT)):
+    #         pt_text = PT[i]
+    #         pt_freq = get_relative_freq(pt_text)
+    #         # Adjust for random insertions
+    #         adjusted_pt_freq = adjust_freq(pt_freq, prob_random_ciphertext)
+    #         distance = compare_frequency_profiles(ct_freq, adjusted_pt_freq)
+    #         distances.append((i, distance))
 
-        runs += 1
+    #     distances.sort(key=lambda x: x[1])
+    #     best_match_idx, best_distance = distances[0]
 
-    print(f"Accuracy over {runs} runs with random ciphertext probability {prob_random_ciphertext}:")
-    print(f"Correct guesses: {freq_right}")
-    print(f"Accuracy: {freq_right / runs * 100:.2f}%")
+    #     if best_match_idx == pt_idx:
+    #         freq_right += 1
+
+    #     runs += 1
+
+    #print(f"Accuracy over {runs} runs with random ciphertext probability {prob_random_ciphertext}:")
+    #print(f"Correct guesses: {freq_right}")
+    #print(f"Accuracy: {freq_right / runs * 100:.2f}%")
+    guess(PT[best_match_idx])
+    print('')
+    if PT[pt_idx] == PT[best_match_idx]:
+        print("Correct Guess!")
+    else: 
+        print("Wrong guess.")
 
 if __name__ == "__main__":
     start_time = time.time()
