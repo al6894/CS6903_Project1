@@ -44,6 +44,8 @@ def get_frequency(plaintext):
 
 #Check if candidate is viable
 def isCandidate(PT_freq, CT_freq):
+    # print(PT_freq)
+    # print(CT_freq)
     for i in range(len(keyspace)):
         if PT_freq[i] > CT_freq[i]:
             return False
@@ -54,13 +56,15 @@ def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
     for i in range(len(PT)):
         PT_freq = get_frequency(PT[i])
         PT_freq.sort()
+        # print(PT_freq)
+        # print(CT_freq)
         candidate = isCandidate(PT_freq, CT_freq)
         if candidate:
             PT_frequencies[i] = PT_freq
             PT_candidates[i] = PT[i]
 
 # Approach 2: Use ngrams (more specifically a trigram in this case)
-def get_char_ngrams(text, n=5):
+def get_char_ngrams(text, n=4):
     ngrams = [text[i:i+n] for i in range(len(text)-n+1)]
     return Counter(ngrams)
 # Function to compare trigram frequencies
@@ -76,7 +80,8 @@ def compare_ngrams(pt_ngrams, ct_ngrams):
 def guess(PT_guess):
     print("My plaintext guess:")
     print(PT_guess)
-prob_random_ciphertext = 0.75
+    
+prob_random_ciphertext = 0.1
 def main():
     runs = 0
     ngram_right = 0
