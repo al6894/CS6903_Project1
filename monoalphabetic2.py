@@ -14,7 +14,6 @@ PT = ["unconquerable tropical pythagoras rebukingly price ephedra barmiest haste
       ]
 # keyspace: {space, a,...,z}
 keyspace = [' ','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z']
-max_number_to_return = 6
 
 # Function used to generate ciphertext
 def encrypt_mono(pt_idx, key, prob_of_random_ciphertext):
@@ -37,49 +36,6 @@ def encrypt_mono(pt_idx, key, prob_of_random_ciphertext):
             num_rand_characters += 1
         ciphertext_pointer += 1
     return ''.join(c)
-
-# Get the text's character frequency (not in use)
-def get_frequency(plaintext):
-    frequencies = Counter(plaintext)
-    to_return = [frequencies.get(char, 0) for char in keyspace]
-    return to_return
-
-# Check if candidate is viable (not in use)
-def isCandidate(PT_freq, CT_freq):
-    # print(PT_freq)
-    # print(CT_freq)
-    for i in range(len(keyspace)):
-        if PT_freq[i] > CT_freq[i]:
-            return False
-    return True
-
-#Approach 1: Check if letter frequencies are valid for a match (only works up to 0.1 random)
-def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
-    for i in range(len(PT)):
-        PT_freq = get_frequency(PT[i])
-        PT_freq.sort()
-        # print(PT_freq)
-        # print(CT_freq)
-        candidate = isCandidate(PT_freq, CT_freq)
-        if candidate:
-            PT_frequencies[i] = PT_freq
-            PT_candidates[i] = PT[i]
-
-# Approach 2: Use ngrams (more specifically a trigram in this case)
-# Better than frequency analysis after 0.1 random
-def get_char_ngrams(text, n=4):
-    ngrams = [text[i:i+n] for i in range(len(text)-n+1)]
-    return Counter(ngrams)
-
-# Function to compare trigram frequencies
-def compare_ngrams(pt_ngrams, ct_ngrams):
-    # Find common n-grams between ciphertext and plaintext
-    common_ngrams = set(pt_ngrams.keys()) & set(ct_ngrams.keys())
-    score = 0
-    # Sum up the minimum count for each common trigram (how often it appears in both)
-    for ngram in common_ngrams:
-        score += min(pt_ngrams[ngram], ct_ngrams[ngram])
-    return score
 
 # Approach 3: Improves on previous frequency analysis, uses relative
 # frequency, adjusts frequency based on random ciphertext chance.
@@ -163,6 +119,7 @@ def main():
     #print(f"Accuracy over {runs} runs with random ciphertext probability {prob_random_ciphertext}:")
     #print(f"Correct guesses: {freq_right}")
     #print(f"Accuracy: {freq_right / runs * 100:.2f}%")
+    
     guess(PT[best_match_idx])
     print('')
     if PT[pt_idx] == PT[best_match_idx]:
@@ -177,3 +134,46 @@ if __name__ == "__main__":
     elapsed_time = end_time - start_time
     print(f"Raw elapsed time: {elapsed_time:.8f} seconds")
     minutes, seconds = divmod(elapsed_time, 60)
+    
+# Get the text's character frequency (not in use)
+def get_frequency(plaintext):
+    frequencies = Counter(plaintext)
+    to_return = [frequencies.get(char, 0) for char in keyspace]
+    return to_return
+
+# Check if candidate is viable (not in use)
+def isCandidate(PT_freq, CT_freq):
+    # print(PT_freq)
+    # print(CT_freq)
+    for i in range(len(keyspace)):
+        if PT_freq[i] > CT_freq[i]:
+            return False
+    return True
+
+#Approach 1: Check if letter frequencies are valid for a match (only works up to 0.1 random)
+def compare_frequencies(PT_frequencies, PT_candidates, CT_freq):
+    for i in range(len(PT)):
+        PT_freq = get_frequency(PT[i])
+        PT_freq.sort()
+        # print(PT_freq)
+        # print(CT_freq)
+        candidate = isCandidate(PT_freq, CT_freq)
+        if candidate:
+            PT_frequencies[i] = PT_freq
+            PT_candidates[i] = PT[i]
+
+# Approach 2: Use ngrams (more specifically a trigram in this case)
+# Better than frequency analysis after 0.1 random
+def get_char_ngrams(text, n=4):
+    ngrams = [text[i:i+n] for i in range(len(text)-n+1)]
+    return Counter(ngrams)
+
+# Function to compare trigram frequencies
+def compare_ngrams(pt_ngrams, ct_ngrams):
+    # Find common n-grams between ciphertext and plaintext
+    common_ngrams = set(pt_ngrams.keys()) & set(ct_ngrams.keys())
+    score = 0
+    # Sum up the minimum count for each common trigram (how often it appears in both)
+    for ngram in common_ngrams:
+        score += min(pt_ngrams[ngram], ct_ngrams[ngram])
+    return score
