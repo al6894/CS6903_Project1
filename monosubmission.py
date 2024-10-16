@@ -61,12 +61,12 @@ def main():
     print(PT[best_match_idx])
 
 if __name__ == "__main__":
-    start_time = time.time()
+    #start_time = time.time()
     main()
-    end_time = time.time()
-    elapsed_time = end_time - start_time
-    print(f"Raw elapsed time: {elapsed_time:.8f} seconds")
-    minutes, seconds = divmod(elapsed_time, 60)
+    #end_time = time.time()
+    #elapsed_time = end_time - start_time
+    #print(f"Raw elapsed time: {elapsed_time:.8f} seconds")
+    #minutes, seconds = divmod(elapsed_time, 60)
     
     # Get the text's character frequency (not in use)
 def get_frequency(plaintext):
